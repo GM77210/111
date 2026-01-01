@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <base target="_top">
+    <style>
+        body { background: #1a1a1a; color: #fff; text-align: center; font-family: sans-serif; }
+        table { margin: 20px auto; border-collapse: collapse; width: 90%; background: #222; }
+        th, td { border: 1px solid #444; padding: 12px; }
+        th { background: #333; }
+        button { padding: 5px 10px; cursor: pointer; margin: 2px; border: none; border-radius: 3px; }
+        .btn-del { background: #ff4d4d; color: white; }
+        .btn-edit { background: #4da6ff; color: white; }
+        .btn-back { padding: 10px 20px; font-size: 16px; margin-top: 20px; background: #eee; }
+    </style>
+</head>
+<body>
+    <h1>遊戲排行榜 (管理模式)</h1>
+    <table id="list">
+        <thead>
+            <tr>
+                <th>名次</th>
+                <th>玩家名稱 (點擊修改)</th>
+                <th>分數</th>
+                <th>操作</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+    <button class="btn-back" onclick="backToGame()">返回遊戲</button>
+
+    <script>
+        function loadScores() {
+            google.script.run.withSuccessHandler(function(data) {
+                const tbody = document.querySelector('#list tbody');
+                tbody.innerHTML = ""; // 清空舊內容
+                data.forEach((row, i) => {
+                    const tr = document.createElement('tr');
+                    // row[0] 是 ID, row[1] 是名字, row[2] 是分數
+                    tr.innerHTML = `
+                        <td>${i+1}</td>
+                        <td id="name-${row[0]}">${row[1]}</td>
+                        <td>${row[2]}</td>
+                        <td>
+                            <button class="btn-edit" onclick="editName('${row[0]}')">修改名字</button>
+                            <button class="btn-del" onclick="removeScore('${row[0]}')">刪除</button>
+                        </td>
+                    `;
+                    tbody.appendChild(tr);
+                });
+            }).getLeaderboard();
+        }
+
+        // 修改邏輯 (Update)
+        function editName(id) {
+            const oldName = document.getElementById('name-' + id).innerText;
+            const newName = prompt("請輸入新的玩家名稱：", oldName);
+            if (newName && newName !== oldName) {
+                google.script.run.withSuccessHandler(function(msg) {
+                    alert(msg);
+                    loadScores(); // 重新整理
+                }).updatePlayerName(id, newName);
+            }
+        }
+
+        // 刪除邏輯 (Delete)
+        function removeScore(id) {
+            if (confirm("確定要刪除這筆分數紀錄嗎？")) {
+                google.script.run.withSuccessHandler(function(msg) {
+                    alert(msg);
+                    loadScores(); // 重新整理
+                }).deleteScore(id);
+            }
+        }
+
+        function backToGame() {
+            google.script.run.withSuccessHandler(function(url) {
+                window.open(url, '_top');
+            }).getAppUrl();
+        }
+
+        window.onload = loadScores;
+    </script>
+</body>
+</html>
